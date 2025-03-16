@@ -1,0 +1,2365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QReady</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+    --primary: #3a86ff; /* Pastel green */
+    --primary-dark: #8cbaa1; /* Darker pastel green */
+    --secondary: #f5e6a3; /* Pastel yellow */
+    --success: #a8d5ba; /* Pastel green */
+    --error: #ff6b6b; /* Pastel red */
+    --light: #f8f9fa; /* Light gray */
+    --dark: #212529; /* Dark gray */
+    --gray: #6c757d; /* Gray */
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f0f4f8;
+            color: var(--dark);
+            margin: 0;
+            padding: 0;
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark-mode {
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+        }
+
+        .dark-mode .page-content {
+            background-color: #16213e;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .dark-mode input, .dark-mode select {
+            background-color: #0f3460;
+            color: #e6e6e6;
+            border-color: #2c3e50;
+        }
+
+        .dark-mode button.secondary {
+            background-color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        header {
+            width: 100%;
+            overflow-x: hidden;
+            padding: 20px 0;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 10;
+        }
+
+        .dark-mode header {
+            background-color: #0f3460;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: auto;
+            padding: 5px;
+        }
+
+        .dark-mode .theme-toggle {
+            color: var(--light);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .dark-mode h1 {
+            color: #70a1ff;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin: 20px 0;
+            color: var(--dark);
+            text-align: center;
+        }
+
+        .dark-mode h2 {
+            color: #e6e6e6;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 15px 0;
+            color: var(--dark);
+        }
+
+        .dark-mode h3 {
+            color: #e6e6e6;
+        }
+
+        /* Page layout styles */
+        .page-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            width: 100%; /* Adjust this value to control the content width */
+            margin: 0 auto; /* Centers the section horizontally */
+            max-width: 1200px; /* Optional: Sets a maximum width for larger screens */
+        }
+
+        .page-section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: fadeInUp 0.5s forwards;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            max-width: 500px;
+            margin: 30px auto;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(168, 213, 186, 0.15);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .invalid-feedback {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            text-align: left;
+            display: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button.primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        button.primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(168, 213, 186, 0.2);
+        }
+
+        button.secondary {
+            background-color: #e9ecef;
+            color: var(--dark);
+        }
+
+        button.secondary:hover {
+            background-color: #dee2e6;
+            transform: translateY(-2px);
+        }
+
+        button.success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        button.success:hover {
+            background-color: #8cbaa1;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .buttons-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .buttons-row button {
+            flex: 1;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #log {
+            margin-top: 20px;
+            text-align: left;
+            list-style-type: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .dark-mode #log {
+            border-color: #2c3e50;
+        }
+
+        #log li {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            margin: 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dark-mode #log li {
+            background: #0f3460;
+            border-bottom: 1px solid #2c3e50;
+        }
+
+        #log li:last-child {
+            border-bottom: none;
+        }
+
+        #log li i {
+            color: var(--success);
+        }
+
+        #qrcode-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px auto;
+            display: inline-block;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .dark-mode #qrcode-container {
+            background-color: #e6e6e6;
+        }
+
+        #qrcode {
+            display: flex;
+            justify-content: center;
+        }
+
+        .qr-refresh-timer {
+            position: absolute;
+            top: -15px; 
+            right: 100%;
+            transform: translateX(50%);
+            background-color: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            z-index: 5;
+        }
+
+        .dark-mode .loading-overlay {
+            background-color: rgba(15, 52, 96, 0.8);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-error {
+            background-color: #ffebee;
+            border-left-color: var(--error);
+            color: var(--error);
+        }
+
+        .dark-mode .alert-error {
+            background-color: rgba(255, 107, 107, 0.2);
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            border-left-color: var(--success);
+            color: var(--success);
+        }
+
+        .dark-mode .alert-success {
+            background-color: rgba(168, 213, 186, 0.2);
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+        }
+
+        .placeholder-text {
+            opacity: 0.7;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+            margin-top: auto;
+            padding: 20px;
+            background-color: white;
+            color: var(--gray);
+            text-align: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark-mode footer {
+            background-color: #0f3460;
+            color: #a0aec0;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            max-width: 300px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        /* Page transition animations */
+        .page-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(168, 213, 186, 0.1);
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .page-transition.active {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Navigation styles */
+        .nav-link {
+            text-decoration: none;
+            color: var(--primary);
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Page loading animation */
+        .page-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            z-index: 9999;
+            animation: loadingBar 2s ease-in-out;
+            transform-origin: left;
+            display: none;
+        }
+
+        .page-loading.active {
+            display: block;
+        }
+
+        @keyframes loadingBar {
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+
+        /* Error page styling */
+        #error-page {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        #error-page i {
+            font-size: 60px;
+            color: var(--error);
+            margin-bottom: 20px;
+        }
+
+        #error-page h2 {
+            margin-bottom: 20px;
+        }
+
+        #error-page p {
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @media (max-width: 600px) {
+            .page-content {
+                margin: 15px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.6rem;
+            }
+
+            h3 {
+                font-size: 1.3rem;
+            }
+        }
+        .settings-panel {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .dark-mode .settings-panel {
+            background-color: #0f3460;
+            border-color: #2c3e50;
+        }
+
+        .late-entry {
+            background-color: #fff3cd !important;
+            border-left: 4px solid #ffc107 !important;
+        }
+
+        .dark-mode .late-entry {
+            background-color: rgba(255, 193, 7, 0.2) !important;
+            border-left: 4px solid #ffc107 !important;
+        }
+
+        .strike-limit {
+            background-color: #f8d7da !important;
+            border-left: 4px solid #dc3545 !important;
+            text-decoration: line-through;
+        }
+
+        .dark-mode .strike-limit {
+            background-color: rgba(220, 53, 69, 0.2) !important;
+            border-left: 4px solid #dc3545 !important;
+        }
+
+        .strikes-counter {
+            background-color: #e9ecef;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            margin-left: auto;
+        }
+
+        .dark-mode .strikes-counter {
+            background-color: #2c3e50;
+        }
+
+        .late-badge {
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-left: 5px;
+            background-color: #ffc107;
+            color: #212529;
+        }
+        #log li {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        #log li .user-info {
+            flex: 1;
+        }
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .legend {
+            display: flex;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .dark-mode .legend {
+            background-color: #0f3460;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex; /* Enables flexbox layout */
+            align-items: center; /* Align items vertically in the center */
+            gap: 10px; /* Adds space between the icon and text */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark-mode .stat-card {
+            background-color: #0f3460;
+        }
+
+        .stat-card i {
+            font-size: 24px; /* Ensures consistent icon size */
+            flex-shrink: 0; /* Prevents the icon from shrinking */
+            margin-right: 10px; /* Adds spacing between the icon and the label */
+            color: var(--primary); /* Applies the desired color */
+        }
+        .stat-card div {
+            display: flex;
+            flex-direction: column; /* Stacks the heading and span vertically */
+            flex: 1; /* Allows the text section to take the remaining space */
+            min-width: 0; /* Prevents overflowing content */
+        }
+        .dark-mode .stat-card i {
+            color: #70a1ff;
+        }
+
+        .stat-card h4 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .stat-card span {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        .dark-mode .attendance-table {
+            background-color: #0f3460;
+        }
+
+        .attendance-table th,
+        .attendance-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dark-mode .attendance-table th,
+        .dark-mode .attendance-table td {
+            border-bottom: 1px solid #2c3e50;
+        }
+
+        .attendance-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .dark-mode .attendance-table th {
+            background-color: #16213e;
+        }
+
+        .attendance-table .late-row {
+            background-color: #fff3cd;
+        }
+
+        .dark-mode .attendance-table .late-row {
+            background-color: rgba(255, 193, 7, 0.2);
+        }
+
+        .attendance-table .strike-row {
+            background-color: #f8d7da;
+            text-decoration: line-through;
+        }
+
+        .dark-mode .attendance-table .strike-row {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-ontime {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .dark-mode .status-ontime {
+            background-color: rgba(168, 213, 186, 0.2);
+            color: #25a18e;
+        }
+
+        .status-late {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .dark-mode .status-late {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .strikes-badge {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #f8d7da;
+            color: #721c24;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .dark-mode .strikes-badge {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+        }
+        .dark-mode .attendance-table {
+            background-color: #0f3460 !important;
+        }
+
+        .exit-badge {
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-left: 5px;
+            background-color: var(--secondary);
+            color: white;
+        }
+        .section-badge {
+            background-color: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+
+        .early-exit-badge {
+            background-color: #ff9800;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        .section-manager {
+            background-color: var(--light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .dark-mode .section-manager {
+            background-color: var(--dark);
+        }
+
+        .section-settings {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .dark-mode .modal-content {
+            background-color: #0f3460;
+        }
+
+        button.error {
+            background-color: var(--error);
+            color: white;
+        }
+
+        button.error:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-loading" id="page-loading"></div>
+    <div class="page-transition" id="page-transition"></div>
+
+    <header>
+        <div class="container header-content">
+            <h1>QReady - QR Attendance System</h1>
+            <button class="theme-toggle" onclick="toggleDarkMode()">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Login Page -->
+        <section id="login-page" class="page-section">
+            <div class="page-content">
+                <h2>Start Here</h2>
+                <div id="loginAlert" style="display: none;"></div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-group">
+                        <input type="text" id="username" placeholder="Enter your username" required>
+                        <span class="input-icon"><i class="fas fa-user"></i></span>
+                    </div>
+                    <div class="invalid-feedback" id="usernameError">Please enter a valid username</div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-group">
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                        <span class="input-icon" id="login-password-toggle" onclick="togglePasswordVisibility('password')"><i class="fas fa-lock"></i></span>
+                    </div>
+                    <div class="invalid-feedback" id="passwordError">Please enter your password</div>
+                </div>
+                <button class="primary" onclick="login()">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <button class="secondary" onclick="navigateTo('#register-page')">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </div>
+        </section>
+
+        <!-- Register Page -->
+        <section id="register-page" class="page-section">
+            <div class="page-content">
+                <h2>Create Account</h2>
+                <div id="registerAlert" style="display: none;"></div>
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <div class="input-group">
+                        <input type="text" id="regUsername" placeholder="Choose a username" required>
+                        <span class="input-icon"><i class="fas fa-user"></i></span>
+                    </div>
+                    <div class="invalid-feedback" id="regUsernameError">Username is required</div>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <div class="input-group">
+                        <input type="password" id="regPassword" placeholder="Choose a password" required>
+                        <span class="input-icon" id="register-password-toggle" onclick="togglePasswordVisibility('regPassword')"><i class="fas fa-lock"></i></span>
+                    </div>
+                    <div class="invalid-feedback" id="regPasswordError">Password is required</div>
+                </div>
+                <div class="form-group">
+                    <label for="role">Account Type</label>
+                    <select id="role">
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+                </div>
+                <div class="form-group" id="teacherCodeGroup" style="display: none;">
+                    <label for="teacherCode">Teacher Registration Code</label>
+                    <div class="input-group">
+                        <input type="password" id="teacherCode" placeholder="Enter teacher code">
+                        <span class="input-icon"><i class="fas fa-key"></i></span>
+                    </div>
+                </div>
+                <div class="buttons-row">
+                    <button class="primary" onclick="register()">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                    <button class="secondary" onclick="navigateTo('#login-page')">
+                        <i class="fas fa-arrow-left"></i> Back to Login
+                    </button>
+                </div>
+        </section>
+
+        <!-- Student Page -->
+        <section id="student-page" class="page-section">
+            <div class="page-content">
+                <h2>Student Attendance</h2>
+                <p>Present your QR code to your teacher to mark attendance:</p>
+                <div class="form-group">
+                    <label for="studentSection">Your Section</label>
+                    <select id="studentSection" onchange="updateStudentSection()">
+                        <option value="">Select Section</option>
+                        ${Object.keys(sections).map(section => 
+                            `<option value="${section}" ${users[currentUser]?.section === section ? 'selected' : ''}>
+                                ${section}
+                            </option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div style="text-align: center; position: relative;">
+                    <div id="qrcode-container">
+                        <div id="qrcode"></div>
+                        <div class="qr-refresh-timer" id="qrTimer">15</div>
+                        <div id="qrLoading" class="loading-overlay" style="display:none;">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-top: 15px;">QR code refreshes automatically for security</p>
+                <button class="success" onclick="downloadPersonalQR()">
+                    <i class="fas fa-download"></i> Download QR Code
+                </button>
+                <button class="secondary" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </section>
+
+        <!-- Teacher Page -->
+        <section id="teacher-page" class="page-section">
+            <div class="page-content">
+                <h2>Teacher Dashboard</h2>
+                <div id="reader"></div>
+                <div style="margin: 20px 0;">
+                    <h3>Attendance Records</h3>
+                    <ul id="log">
+                        <li class="placeholder-text">No records yet. Scan a student QR code to begin.</li>
+                    </ul>
+                </div>
+                <div class="scan-mode-toggle" style="margin-bottom: 20px; text-align: center;">
+                    <button id="scanModeToggle" class="primary" onclick="toggleScanMode()">
+                        <i class="fas fa-sign-in-alt"></i> Current Mode: Entry
+                    </button>
+                </div>
+                <div class="buttons-row">
+                    <button class="success" onclick="downloadAttendance()">
+                        <i class="fas fa-download"></i> Download Records
+                    </button>
+                    <button class="secondary" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+            <div class="settings-panel">
+                <h3>Attendance Settings</h3>
+                <div class="form-group">
+                    <label for="lateThreshold">Late Threshold (minutes)</label>
+                    <input type="number" id="lateThreshold" value="15" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="strikeLimit">Strike Limit</label>
+                    <input type="number" id="strikeLimit" value="3" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="attendanceTime">Class Start Time</label>
+                    <input type="time" id="attendanceTime" value="08:00">
+                </div>
+                <button class="primary" onclick="saveSettings()">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+            </div>
+            <div id="sectionModal" class="modal">
+                <div class="modal-content">
+                    <h3>Create New Section</h3>
+                    <div class="form-group">
+                        <label for="sectionName">Section Name</label>
+                        <input type="text" id="sectionName" placeholder="Enter section name">
+                    </div>
+                    <div class="form-group">
+                        <label>Section Settings</label>
+                        <div class="settings-group">
+                            <div class="form-group">
+                                <label for="sectionStartTime">Class Start Time</label>
+                                <input type="time" id="sectionStartTime">
+                            </div>
+                            <div class="form-group">
+                                <label for="sectionDismissTime">Dismissal Time</label>
+                                <input type="time" id="sectionDismissTime">
+                            </div>
+                            <input type="number" id="sectionLateThreshold" placeholder="Late Threshold (minutes)">
+                            <input type="number" id="sectionStrikeLimit" placeholder="Strike Limit">
+                            <input type="number" id="sectionEarlyExitThreshold" placeholder="Early Exit Threshold (minutes)">
+                        </div>
+                    </div>
+                    <div class="buttons-row">
+                        <button class="primary" onclick="createSection()">Create Section</button>
+                        <button class="secondary" onclick="closeModal()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            <div class="section-buttons" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <div id="sectionButtonsContainer"></div>
+            </div>
+            <div class="section-buttons">
+                <button class="primary" onclick="showAddSectionModal()">
+                    <i class="fas fa-plus"></i> Add Section
+                </button>
+                <button class="secondary" onclick="showDeleteSectionModal()">
+                    <i class="fas fa-trash"></i> Delete Section
+                </button>
+            </div>
+            <div id="deleteSectionModal" class="modal">
+                <div class="modal-content">
+                    <h3>Delete Section</h3>
+                    <div class="form-group">
+                        <label for="deleteSectionSelect">Select Section to Delete</label>
+                        <select id="deleteSectionSelect">
+                            <option value="">Choose a section</option>
+                        </select>
+                    </div>
+                    <div class="buttons-row">
+                        <button class="error" onclick="deleteSection()">
+                            <i class="fas fa-trash"></i> Delete Section
+                        </button>
+                        <button class="secondary" onclick="closeDeleteModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </section>
+        
+        <!-- Logs Page -->
+        <section id="logs-page" class="page-section">
+            <div class="page-content" style="max-width: 1000px; padding: 2rem;">
+                <h2 class="text-center" style="margin-bottom: 2rem;">Attendance Records</h2>
+                
+                <div class="form-group" style="flex: 0 0 200px;">
+                    <label for="filterSection" style="font-weight: 600;">Filter by Section</label>
+                    <select id="filterSection" style="width: 100%; padding: 8px; border-radius: 6px;" onchange="filterAttendanceLogs()">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
+                <div class="logs-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div class="form-group" style="flex: 0 0 200px;">
+                        <label for="filterDate" style="font-weight: 600;">Filter by Date</label>
+                        <input type="date" id="filterDate" style="width: 100%; padding: 8px; border-radius: 6px;">
+                    </div>
+                    <div class="buttons-row" style="gap: 1rem;">
+                        <button class="secondary" onclick="clearFilters()" style="padding: 8px 16px; border-radius: 6px;">
+                            <i class="fas fa-sync"></i> Reset
+                        </button>
+                        <button class="primary" onclick="exportFilteredLogs()" style="padding: 8px 16px; border-radius: 6px;">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="legend" style="display: flex; gap: 2rem; justify-content: center; margin-bottom: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                    <div class="legend-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="legend-color" style="width: 20px; height: 20px; background-color: #fff3cd; border-radius: 4px;"></div>
+                        <span style="font-size: 0.9rem;">Late</span>
+                    </div>
+                    <div class="legend-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="legend-color" style="width: 20px; height: 20px; background-color: #f8d7da; border-radius: 4px;"></div>
+                        <span style="font-size: 0.9rem;">Strike Limit Reached</span>
+                    </div>
+                </div>
+                
+                <div class="summary-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="stat-card" style="background: var(--bg-primary); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Total Students</h4>
+                            <span id="totalStudents" style="font-size: 1.5rem; font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-primary); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">On Time</h4>
+                            <span id="onTimeCount" style="font-size: 1.5rem; font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-primary); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Late</h4>
+                            <span id="lateCount" style="font-size: 1.5rem; font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-primary); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Strikes</h4>
+                            <span id="strikesCount" style="font-size: 1.5rem; font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-container" style="background: var(--bg-primary); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+                    <table class="attendance-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--bg-secondary);">
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border-color);">Student</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border-color);">Section</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border-color);">Date & Time</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border-color);">Status</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid var(--border-color);">Strikes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceLogTable">
+                            <tr>
+                                <td colspan="5" class="placeholder-text" style="padding: 2rem; text-align: center; color: var(--text-secondary);">No attendance records found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="buttons-row" style="display: flex; justify-content: space-between; gap: 1rem; margin-top: 2rem;">
+                    <button class="secondary" onclick="navigateTo('#teacher-page')" style="padding: 10px 20px; border-radius: 6px;">
+                        <i class="fas fa-arrow-left"></i> Back to Scanner
+                    </button>
+                    <button class="secondary" onclick="logout()" style="padding: 10px 20px; border-radius: 6px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- Error Page -->
+        <section id="error-page" class="page-section">
+            <div class="page-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Page Not Found</h2>
+                <p>We couldn't find the page you're looking for. Please check the URL or go back to the login page.</p>
+                <button class="primary" onclick="navigateTo('#login-page')">
+                    <i class="fas fa-home"></i> Return to Login
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Gumandoy QReady. All rights reserved.</p>
+    </footer>
+
+    <script>
+        let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+            // Initialize strikes for existing users
+            Object.keys(users).forEach(username => {
+                if (!users[username].strikes) {
+                    users[username].strikes = 0;
+                }
+            });
+        const SECRET_KEY = "chong"; // Enhanced security
+        let qrRefreshInterval;
+        let qrTimerInterval;
+        let qrScanner;
+        let currentUser = '';
+        let currentPage = '';
+        let attendanceSettings = JSON.parse(localStorage.getItem('attendanceSettings')) || {
+            lateThreshold: 15,
+            strikeLimit: 3,
+            attendanceTime: '08:00',
+        };
+        let lateRecords = JSON.parse(localStorage.getItem('lateRecords')) || {};
+        let sections = JSON.parse(localStorage.getItem('sections')) || {};
+
+        function initPageFunctionality(pageId) {
+            // Clean up any existing intervals or processes
+            if (qrRefreshInterval) clearInterval(qrRefreshInterval);
+            if (qrTimerInterval) clearInterval(qrTimerInterval);
+            if (qrScanner && typeof qrScanner.stop === 'function') {
+                qrScanner.stop();
+            }
+            // Initialize page-specific functionality
+            switch (pageId) {
+                case 'student-page':
+                    startQRCodeGeneration(currentUser);
+                    updateStudentSectionDropdown();
+                    break;
+                case 'teacher-page':
+                    startQRScanner();
+                    initAttendanceSettings();
+                    initTeacherNavigation(); // Add the navigation to logs page
+                    syncAttendanceLogs();
+                    break;
+                case 'logs-page':
+                    syncAttendanceLogs();
+                    if (users[currentUser]?.role !== 'teacher') {
+                        // Redirect if not a teacher
+                        navigateTo('#login-page');
+                        showNotification('Access denied: Only teachers can view logs', 'error');
+                    } else {
+                        updateLogsSectionFilter();
+                        loadAttendanceLogs();
+                        // Add event listener for date filter
+                        document.getElementById('filterDate').addEventListener('change', loadAttendanceLogs);
+                        document.getElementById('filterSection').addEventListener('change', loadAttendanceLogs);
+                    }
+                    break;
+            }
+        }
+
+        function initAttendanceSettings() {
+            document.getElementById('lateThreshold').value = attendanceSettings.lateThreshold;
+            document.getElementById('strikeLimit').value = attendanceSettings.strikeLimit;
+            document.getElementById('attendanceTime').value = attendanceSettings.attendanceTime;
+        }
+        function initLogsPage() {
+            generateSectionButtons();
+            showAllRecords();
+        }
+
+        function saveSettings() {
+            attendanceSettings.lateThreshold = parseInt(document.getElementById('lateThreshold').value);
+            attendanceSettings.strikeLimit = parseInt(document.getElementById('strikeLimit').value);
+            attendanceSettings.attendanceTime = document.getElementById('attendanceTime').value;
+        
+            localStorage.setItem('attendanceSettings', JSON.stringify(attendanceSettings));
+            showNotification('Settings saved successfully', 'success');
+        
+              // Re-render attendance log with new settings
+            updateAttendanceLog();
+        }
+        function recordAttendance(username) {
+            const userSection = users[username].section;
+            const sectionSettings = sections[userSection];
+            
+            const existingEntry = attendanceRecords.find(record =>
+                record.username === username && 
+                record.section === userSection &&
+                Date.now() - record.timestamp < 15000
+            );
+
+            if (!existingEntry) {
+                const now = new Date();
+                const [dismissHours, dismissMinutes] = sectionSettings.dismissTime.split(':');
+                const dismissTime = new Date(now);
+                dismissTime.setHours(dismissHours, dismissMinutes, 0, 0);
+
+                const isLate = isExitMode ? false : 
+                    checkIfLate(sectionSettings.startTime, sectionSettings.lateThreshold);
+                const isEarlyExit = isExitMode ? 
+                    now < dismissTime : false;
+
+                attendanceRecords.push({
+                    username: username,
+                    section: userSection,
+                    timestamp: Date.now(),
+                    date: now.toLocaleString(),
+                    isLate: isLate,
+                    isEarlyExit: isEarlyExit,
+                    type: isExitMode ? 'exit' : 'entry',
+                    strikes: lateRecords[username]?.strikeCount || 0
+                });
+
+                localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+                updateAttendanceLog();
+                showNotification(`${isExitMode ? 'Exit' : 'Entry'} recorded for ${username}`, 'success');
+            }
+        }
+        document.getElementById('role').addEventListener('change', function() {
+            const teacherCodeGroup = document.getElementById('teacherCodeGroup');
+            teacherCodeGroup.style.display = this.value === 'teacher' ? 'block' : 'none';
+        });
+        function checkIfLate(startTime, threshold) {
+            const now = new Date();
+            const [hours, minutes] = startTime.split(':');
+            const classTime = new Date(now);
+            classTime.setHours(hours, minutes, 0, 0);
+            
+            const lateTime = new Date(classTime);
+            lateTime.setMinutes(classTime.getMinutes() + threshold);
+            
+            return now > lateTime;
+        }
+        
+        function updateAttendanceLog() {
+            const logElement = document.getElementById('log');
+            logElement.innerHTML = '';
+
+            if (attendanceRecords.length === 0) {
+                logElement.innerHTML = '<li class="placeholder-text">No records yet.</li>';
+                return;
+            }
+
+            attendanceRecords.forEach(record => {
+                const li = document.createElement('li');
+                
+                if (record.isLate) li.classList.add('late-entry');
+                if (record.isEarlyExit) li.classList.add('early-exit');
+                if (record.strikes > 0) li.classList.add('strike-limit');
+                
+                li.innerHTML = `
+                    <i class="fas fa-${record.type === 'exit' ? 'sign-out-alt' : record.isLate ? 'exclamation-circle' : 'check-circle'}"></i>
+                    <div class="user-info">
+                        <strong>${record.username}</strong>
+                        <span class="section-badge">${record.section}</span>
+                        ${record.isLate ? '<span class="late-badge">Late</span>' : ''}
+                        ${record.isEarlyExit ? '<span class="early-exit-badge">Early Exit</span>' : ''}
+                        <br>
+                        <small>${record.type === 'exit' ? 'Out: ' : 'In: '}${record.date}</small>
+                    </div>
+                    ${record.strikes > 0 ? `<div class="strikes-counter">${record.strikes}</div>` : ''}
+                `;
+                logElement.appendChild(li);
+            });
+        }
+        function downloadAttendance() {
+            if (attendanceRecords.length === 0) {
+                showNotification('No attendance records to download', 'error');
+                return;
+            }
+
+            const csvContent = "data:text/csv;charset=utf-8,"
+                + "Username,Date,Status,Strikes\n"
+                + attendanceRecords.map(record => 
+                    `${record.username},${record.date},${record.isLate ? 'Late' : 'On Time'},${record.strikes || 0}`
+                ).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'attendance_with_status.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+    }
+        // Check for dark mode preference on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSectionDropdowns();
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.theme-toggle i').classList.replace('fa-moon', 'fa-sun');
+            }
+
+            // Initialize page based on URL hash or default to login
+            initPageBasedNavigation();
+        });
+
+        // Handle hash changes for navigation
+        window.addEventListener('hashchange', function() {
+            initPageBasedNavigation();
+        });
+
+        function initPageBasedNavigation() {
+            const hash = window.location.hash || '#login-page';
+            if (isPageAccessAllowed(hash)) {
+                showPage(hash.substring(1)); // Remove the # symbol
+            } else {
+                // Redirect to login if user tries to access protected pages without login
+                window.location.hash = '#login-page';
+            }
+        }
+
+        function isPageAccessAllowed(hash) {
+            // Pages that require authentication
+            const protectedPages = ['#student-page', '#teacher-page'];
+            
+            if (protectedPages.includes(hash) && !currentUser) {
+                showNotification('Please login to access this page', 'error');
+                return false;
+            }
+            
+            // Role-specific pages
+            if (hash === '#student-page' && users[currentUser]?.role !== 'student') {
+                showNotification('Access denied: Teacher account cannot access student page', 'error');
+                return false;
+            }
+            
+            if (hash === '#teacher-page' && users[currentUser]?.role !== 'teacher') {
+                showNotification('Access denied: Student account cannot access teacher page', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+
+        function navigateTo(hash) {
+            // Add page transition effect
+            const pageTransition = document.getElementById('page-transition');
+            const pageLoading = document.getElementById('page-loading');
+            
+            pageTransition.classList.add('active');
+            pageLoading.classList.add('active');
+            
+            setTimeout(() => {
+                window.location.hash = hash;
+                
+                setTimeout(() => {
+                    pageTransition.classList.remove('active');
+                    pageLoading.classList.remove('active');
+                }, 300);
+            }, 200);
+        }
+
+        function showPage(pageId) {
+            // Hide all pages first
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show the selected page
+            const currentPageElement = document.getElementById(pageId);
+            if (currentPageElement) {
+                currentPageElement.classList.add('active');
+                currentPage = pageId;
+                
+                if (pageId === 'logs-page') {
+                    // Populate section dropdown and load attendance logs
+                    populateSectionDropdown();
+                    filterAttendanceLogs();
+                }
+                // Initialize page-specific functionality
+                initPageFunctionality(pageId);
+            } else {
+                // Show error page if the requested page doesn't exist
+                document.getElementById('error-page').classList.add('active');
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+            
+            const icon = document.querySelector('.theme-toggle i');
+            if (isDarkMode) {
+                icon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                icon.classList.replace('fa-sun', 'fa-moon');
+            }
+            document.querySelectorAll('.stat-card').forEach(card => {
+            card.style.backgroundColor = isDarkMode ? '#0f3460' : 'white';
+        });
+        
+        document.querySelectorAll('.attendance-table').forEach(table => {
+            table.style.backgroundColor = isDarkMode ? '#0f3460' : 'white';
+        });
+
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const iconId = inputId === 'password' ? 'login-password-toggle' : 'register-password-toggle';
+            const iconElement = document.querySelector(`#${iconId} i`);
+            
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                iconElement.classList.remove("fa-lock");
+                iconElement.classList.add("fa-unlock");
+            } else {
+                passwordInput.type = "password";
+                iconElement.classList.remove("fa-unlock");
+                iconElement.classList.add("fa-lock");
+            }
+        }
+
+        function validateForm(formType) {
+            let isValid = true;
+            
+            if (formType === 'login') {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!username) {
+                    document.getElementById('usernameError').style.display = 'block';
+                    document.getElementById('username').style.borderColor = 'var(--error)';
+                    isValid = false;
+                } else {
+                    document.getElementById('usernameError').style.display = 'none';
+                    document.getElementById('username').style.borderColor = '';
+                }
+                
+                if (!password) {
+                    document.getElementById('passwordError').style.display = 'block';
+                    document.getElementById('password').style.borderColor = 'var(--error)';
+                    isValid = false;
+                } else {
+                    document.getElementById('passwordError').style.display = 'none';
+                    document.getElementById('password').style.borderColor = '';
+                }
+            } else if (formType === 'register') {
+                const username = document.getElementById('regUsername').value.trim();
+                const password = document.getElementById('regPassword').value;
+                
+                if (!username) {
+                    document.getElementById('regUsernameError').style.display = 'block';
+                    document.getElementById('regUsername').style.borderColor = 'var(--error)';
+                    isValid = false;
+                } else {
+                    document.getElementById('regUsernameError').style.display = 'none';
+                    document.getElementById('regUsername').style.borderColor = '';
+                }
+                
+                if (!password) {
+                    document.getElementById('regPasswordError').style.display = 'block';
+                    document.getElementById('regPassword').style.borderColor = 'var(--error)';
+                    isValid = false;
+                } else {
+                    document.getElementById('regPasswordError').style.display = 'none';
+                    document.getElementById('regPassword').style.borderColor = '';
+                }
+            }
+            
+            return isValid;
+        }
+
+        function showAlert(elementId, message, type) {
+            const alertElement = document.getElementById(elementId);
+            alertElement.innerHTML = `
+                <div class="alert alert-${type}">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            alertElement.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function register() {
+            if (!validateForm('register')) return;
+            
+            let username = document.getElementById('regUsername').value.trim();
+            let password = document.getElementById('regPassword').value;
+            let role = document.getElementById('role').value;
+            if (!users[username]) {
+                users[username] = {
+                    password: window.btoa(password),
+                    role: role,
+                    strikes: 0
+                };
+                localStorage.setItem('users', JSON.stringify(users));
+                showNotification('Registration successful!', 'success');
+                setTimeout(() => navigateTo('#login-page'), 2000);
+            } else {
+                showNotification('Username already exists!', 'error');
+            }
+            //Teacher registration security
+            if (role === 'teacher') {
+                const teacherCode = prompt('Enter teacher registration code:');
+                const validTeacherCode = 'TEACH2025'; // Store this securely
+                
+                if (teacherCode !== validTeacherCode) {
+                    showNotification('Invalid teacher registration code', 'error');
+                    return;
+                }
+            }
+            
+            // Clear form data
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regPassword').value = '';
+            
+            users[username] = {
+                password: window.btoa(password),
+                role: role,
+                strikes: 0
+            };
+            
+            localStorage.setItem('users', JSON.stringify(users));
+            showNotification('Registration successful!', 'success');
+            setTimeout(() => navigateTo('#login-page'), 2000);
+        }
+            function login() {
+                if (!validateForm('login')) return;
+
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                if (!users[username]) {
+                    showAlert('loginAlert', 'Username not found!', 'error');
+                    return;
+                }
+
+                // Compare base64 encoded passwords
+                const inputEncodedPassword = window.btoa(password);
+                if (inputEncodedPassword !== users[username].password) {
+                    showAlert('loginAlert', 'Incorrect password!', 'error');
+                    return;
+                }
+
+                currentUser = username;
+                showNotification('Login successful!', 'success');
+
+                // Navigate to appropriate dashboard
+                const role = users[username].role;
+                navigateTo(role === 'student' ? '#student-page' : '#teacher-page');
+
+                // Clear login form
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            }
+
+            function startQRCodeGeneration(username) {
+                let seconds = 15;
+                
+                const generateNewQR = () => {
+                    document.getElementById('qrLoading').style.display = 'flex';
+                    
+                    setTimeout(() => {
+                        const qrData = generateQrData(username);
+                        const qrcodeElement = document.getElementById('qrcode');
+                        qrcodeElement.innerHTML = '';
+                        new QRCode(qrcodeElement, {
+                            text: qrData,
+                            width: 200,
+                            height: 200,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                        document.getElementById('qrLoading').style.display = 'none';
+                    }, 500);
+                };
+
+                // Initial generation
+                generateNewQR();
+                qrRefreshInterval = setInterval(generateNewQR, 15000); //adjustable seconds
+                qrTimerInterval = setInterval(() => {
+                    document.getElementById('qrTimer').textContent = --seconds;
+                    if (seconds <= 0) seconds = 15;
+                }, 1000);
+            }
+
+            function generateQrData(username) {
+                const timestamp = Date.now();
+                const section = users[username].section;
+                const dataString = `${username}|${timestamp}|${section}|${SECRET_KEY}`;
+                const hash = sha256(dataString);
+                return `${username}|${timestamp}|${section}|${hash}`;
+            }
+
+
+            function startQRScanner() {
+                const videoElement = document.getElementById('qrVideo');
+
+                if (qrScanner && typeof qrScanner.stop === 'function') {
+                    qrScanner.stop();
+                }
+                qrScanner = new Html5QrcodeScanner('reader', {
+                    fps: 10,
+                    qrbox: 250,
+                    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+                });
+
+                qrScanner.render((decodedText) => {
+                    if (validateQRData(decodedText)) {
+                        const [username, _, section] = decodedText.split('|');
+                        recordAttendance(username);
+                        showNotification(`Attendance recorded for ${username}`, 'success');
+                    } else {
+                        showNotification('Invalid or expired QR code', 'error');
+                    }
+                });
+            }
+
+            function validateQRData(qrData) {
+                const parts = qrData.split('|');
+                if (parts.length !== 4) return false;
+
+                const [username, timestamp, section, receivedHash] = parts;
+                const currentTime = Date.now();
+                
+                if (currentTime - parseInt(timestamp) > 15000) return false;
+
+                const dataString = `${username}|${timestamp}|${section}|${SECRET_KEY}`;
+                const calculatedHash = sha256(dataString);
+                
+                return calculatedHash === receivedHash;
+            }
+            function downloadPersonalQR() {
+                const qrImage = document.querySelector('#qrcode img');
+                if (qrImage) {
+                    const canvas = document.querySelector('#qrcode canvas');
+                    const url = canvas.toDataURL();
+                    const link = document.createElement('a');
+                    link.download = `${currentUser}_qrcode.png`;
+                    link.href = url;
+                    link.click();
+                }
+            }
+
+            function logout() {
+                currentUser = '';
+                attendanceRecords = [];
+                if (qrScanner) qrScanner.clear();
+                clearInterval(qrRefreshInterval);
+                clearInterval(qrTimerInterval);
+                navigateTo('#login-page');
+            }
+
+            function showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = `notification alert alert-${type}`;
+                notification.innerHTML = `
+                    <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i>
+                    ${message}
+                `;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+            function initTeacherNavigation() {
+                // Check if the button already exists to avoid duplicating it
+                if (!document.getElementById('view-logs-button')) {
+                    const teacherPage = document.getElementById('teacher-page');
+                    const buttonsRow = teacherPage.querySelector('.buttons-row');
+                    
+                    // Add the new button before the existing buttons
+                    const viewLogsButton = document.createElement('button');
+                    viewLogsButton.id = 'view-logs-button';
+                    viewLogsButton.className = 'primary';
+                    viewLogsButton.innerHTML = '<i class="fas fa-table"></i> View All Logs';
+                    viewLogsButton.onclick = function() { navigateTo('#logs-page'); };
+                    
+                    buttonsRow.insertBefore(viewLogsButton, buttonsRow.firstChild);
+                }
+            }
+
+            function initStudentPage() {
+                const studentSection = document.createElement('div');
+                studentSection.className = 'form-group';
+                studentSection.innerHTML = `
+                    <label>Current Section</label>
+                    <select id="currentSection" onchange="updateStudentSection()">
+                        ${Object.keys(sections).map(section => 
+                            `<option value="${section}" ${users[currentUser].section === section ? 'selected' : ''}>
+                                ${section}
+                            </option>`
+                        ).join('')}
+                    </select>
+                `;
+                
+                document.querySelector('#student-page .page-content').insertBefore(
+                    studentSection,
+                    document.querySelector('#student-page #qrcode-container')
+                );
+            }
+
+            function initTeacherPage() {
+                const sectionManager = document.createElement('div');
+                sectionManager.className = 'section-manager';
+                sectionManager.innerHTML = `
+                    <h3>Section Management</h3>
+                    <select id="teacherSection" onchange="loadSectionSettings()">
+                        ${Object.keys(sections).map(section => 
+                            `<option value="${section}">${section}</option>`
+                        ).join('')}
+                    </select>
+                    <div class="section-settings">
+                        <div class="form-group">
+                            <label>Class Start Time</label>
+                            <input type="time" id="sectionStartTime">
+                        </div>
+                        <div class="form-group">
+                            <label>Dismissal Time</label>
+                            <input type="time" id="sectionDismissTime">
+                        </div>
+                        <div class="form-group">
+                            <label>Late Threshold (minutes)</label>
+                            <input type="number" id="sectionLateThreshold">
+                        </div>
+                        <div class="form-group">
+                            <label>Strike Limit</label>
+                            <input type="number" id="sectionStrikeLimit">
+                        </div>
+                        <button class="primary" onclick="saveSectionSettings()">
+                            <i class="fas fa-save"></i> Save Section Settings
+                        </button>
+                    </div>
+                `;
+                
+                document.querySelector('#teacher-page .page-content').insertBefore(
+                    sectionManager,
+                    document.querySelector('#teacher-page #reader')
+                );
+            }
+            function loadAttendanceLogs() {
+                const tableBody = document.getElementById('attendanceLogTable');
+                attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                tableBody.innerHTML = '';
+                const filterDate = document.getElementById('filterDate').value;
+                const filterSection = document.getElementById('filterSection').value;
+                let filteredRecords = [...attendanceRecords];
+        
+                if (filterSection) {
+                    filteredRecords = filteredRecords.filter(record => record.section === filterSection);
+                }
+                
+                if (filterDate) {
+                    const selectedDate = new Date(filterDate).setHours(0,0,0,0);
+                    filteredRecords = filteredRecords.filter(record => {
+                        const recordDate = new Date(record.timestamp).setHours(0,0,0,0);
+                        return recordDate === selectedDate;
+                    });
+                }
+                
+                tableBody.innerHTML = filteredRecords.length ? 
+                    filteredRecords.sort((a, b) => b.timestamp - a.timestamp)
+                        .map(record => `
+                            <tr class="${record.isLate ? 'late-row' : ''} ${record.strikes > 0 ? 'strike-row' : ''}">
+                                <td>${record.username}</td>
+                                <td>${record.section || 'N/A'}</td>
+                                <td>${new Date(record.timestamp).toLocaleString()}</td>
+                                <td>
+                                    <span class="status-badge ${record.isLate ? 'status-late' : 'status-ontime'}">
+                                        ${record.isLate ? 'Late' : 'On Time'}
+                                    </span>
+                                </td>
+                                <td>${record.strikes > 0 ? `<span class="strikes-badge">${record.strikes}</span>` : '-'}</td>
+                            </tr>
+                        `).join('') :
+                    '<tr><td colspan="5" class="placeholder-text">No attendance records found</td></tr>';
+                
+                updateStatistics(filteredRecords);
+            }
+
+
+            function updateStatistics(records) {
+                // Calculate statistics
+                const uniqueStudents = [...new Set(records.map(record => record.username))].length;
+                const onTimeCount = records.filter(record => !record.isLate).length;
+                const lateCount = records.filter(record => record.isLate).length;
+                const strikesCount = records.filter(record => record.strikes > 0).length;
+                
+                // Update the display
+                document.getElementById('totalStudents').textContent = uniqueStudents;
+                document.getElementById('onTimeCount').textContent = onTimeCount;
+                document.getElementById('lateCount').textContent = lateCount;
+                document.getElementById('strikesCount').textContent = strikesCount;
+            }
+
+            function clearFilters() {
+                document.getElementById('filterDate').value = '';
+                document.getElementById('filterDate').value = '';
+                filterAttendanceLogs();
+                loadAttendanceLogs();
+            }
+            function exportFilteredLogs() {
+                const selectedSection = document.getElementById('filterSection').value;
+                const selectedDate = document.getElementById('filterDate').value;
+                
+                // Get all attendance records
+                const allRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                
+                // Filter records based on section and date
+                let filteredRecords = allRecords;
+                
+                if (selectedSection) {
+                    filteredRecords = filteredRecords.filter(record => record.section === selectedSection);
+                }
+                
+                if (selectedDate) {
+                    const dateOnly = new Date(selectedDate).toLocaleDateString();
+                    filteredRecords = filteredRecords.filter(record => {
+                        const recordDate = new Date(record.timestamp).toLocaleDateString();
+                        return recordDate === dateOnly;
+                    });
+                }
+                
+                // Get sections data for displaying section names
+                const sections = JSON.parse(localStorage.getItem('sections')) || {};
+                
+                // Create CSV content
+                let csvContent = "Student,Section,Date & Time,Status,Strikes\n";
+                
+                filteredRecords.forEach(record => {
+                    const sectionName = record.section || 'Unknown';
+                    const timestamp = new Date(record.timestamp).toLocaleString();
+                    const status = record.isLate ? 'Late' : 'On Time';
+                    const strikes = record.strikes || 0;
+                    
+                    csvContent += `"${record.username}","${sectionName}","${timestamp}","${status}",${strikes}\n`;
+            });
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                const today = new Date().toISOString().slice(0, 10);
+                const sectionText = selectedSection ? `-${selectedSection}` : '';
+                const dateText = selectedDate ? `-${selectedDate}` : '';
+                link.download = `attendance-log${sectionText}${dateText}-${today}.csv`;
+                
+                link.href = url;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                showNotification('Attendance logs exported successfully', 'success');
+            }
+        function handleStrikeLimit(studentId) {
+            const student = users[studentId];
+            if (!student) return;
+
+            student.strikes = (student.strikes || 0) + 1;
+            localStorage.setItem('users', JSON.stringify(users)); // Save changes
+
+            const strikeLimit = attendanceSettings.strikeLimit; // Use current settings
+            if (student.strikes >= strikeLimit) {
+                showNotification(`${student.username} has reached the strike limit!`, 'error');
+            }
+        }
+        function syncAttendanceLogs() {
+            // Get records from localStorage
+            const storedRecords = localStorage.getItem('attendanceRecords');
+            if (storedRecords) {
+                attendanceRecords = JSON.parse(storedRecords);
+            }
+            
+            // Update both views
+            updateAttendanceLog(); // Updates teacher's main view
+            loadAttendanceLogs(); // Updates detailed logs view
+        }
+        let isExitMode = false;
+
+        function toggleScanMode() {
+            isExitMode = !isExitMode;
+            const button = document.getElementById('scanModeToggle');
+            button.innerHTML = `<i class="fas fa-sign-${isExitMode ? 'out' : 'in'}-alt"></i> Current Mode: ${isExitMode ? 'Exit' : 'Entry'}`;
+            button.style.backgroundColor = isExitMode ? 'var(--secondary)' : 'var(--primary)';
+        }
+        function showAddSectionModal() {
+            document.getElementById('sectionModal').style.display = 'block';
+        }
+        function closeModal() {
+            document.getElementById('sectionModal').style.display = 'none';
+        }
+        function createSection() {
+            const name = document.getElementById('sectionName').value;
+            const settings = {
+                startTime: document.getElementById('sectionStartTime').value,
+                dismissTime: document.getElementById('sectionDismissTime').value,
+                lateThreshold: parseInt(document.getElementById('sectionLateThreshold').value),
+                strikeLimit: parseInt(document.getElementById('sectionStrikeLimit').value),
+                earlyExitThreshold: parseInt(document.getElementById('sectionEarlyExitThreshold').value)
+            };
+            
+            sections[name] = settings;
+            localStorage.setItem('sections', JSON.stringify(sections));
+            updateSectionDropdowns();
+             populateSectionDropdown();
+            
+            // Keep modal open for more section creation
+            document.getElementById('sectionName').value = '';
+            document.getElementById('sectionStartTime').value = '';
+            document.getElementById('sectionDismissTime').value = '';
+            document.getElementById('sectionLateThreshold').value = '';
+            document.getElementById('sectionStrikeLimit').value = '';
+            document.getElementById('sectionEarlyExitThreshold').value = '';
+            
+            showNotification('Section created successfully', 'success');
+        }
+        function updateSectionDropdowns() {
+            const sectionOptions = Object.keys(sections).map(section => 
+                `<option value="${section}">${section}</option>`
+            ).join('');
+            
+            // Update all section dropdowns across pages
+            document.querySelectorAll('select[id="section"]').forEach(select => {
+                select.innerHTML = `
+                    <option value="">Select Section</option>
+                    ${sectionOptions}
+                `;
+            });
+        }
+        function updateStudentSectionDropdown() {
+            const studentSection = document.getElementById('studentSection');
+            studentSection.innerHTML = `
+                <option value="">Select Section</option>
+                ${Object.keys(sections).map(section => 
+                    `<option value="${section}" ${String(users[currentUser]?.section) == String(section) ? 'selected' : ''}>
+                        ${section}
+                    </option>`
+                ).join('')}
+            `;
+        }
+        function updateStudentSection() {
+            const newSection = document.getElementById('studentSection').value;
+            users[currentUser].section = newSection;
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            // Clear existing intervals
+            if (qrRefreshInterval) clearInterval(qrRefreshInterval);
+            if (qrTimerInterval) clearInterval(qrTimerInterval);
+            
+            // Immediately generate new QR with updated section
+            startQRCodeGeneration(currentUser);
+            
+            showNotification('Section updated successfully', 'success');
+        }
+        function updateStudentSectionDropdown() {
+            const studentSection = document.getElementById('studentSection');
+            studentSection.innerHTML = `
+                <option value="">Select Section</option>
+                ${Object.keys(sections).map(section => 
+                    `<option value="${section}" ${users[currentUser].section === section ? 'selected' : ''}>
+                        ${section}
+                    </option>`
+                ).join('')}
+            `;
+        }
+        function updateLogsSectionFilter() {
+            const filterSection = document.getElementById('filterSection');
+            filterSection.innerHTML = `
+                <option value="">All Sections</option>
+                ${Object.keys(sections).map(section => 
+                    `<option value="${section}">${section}</option>`
+                ).join('')}
+            `;
+        }
+        function updateAllSectionDropdowns() {
+            const sectionOptions = Object.keys(sections).map(section => 
+                `<option value="${section}">${section}</option>`
+            ).join('');
+            
+            // Update registration page section dropdown
+            const registerSection = document.getElementById('section');
+            if (registerSection) {
+                registerSection.innerHTML = `
+                    <option value="">Select Section</option>
+                    ${sectionOptions}
+                `;
+            }
+            
+            // Update student page section dropdown
+            const studentSection = document.getElementById('studentSection');
+            if (studentSection) {
+                studentSection.innerHTML = `
+                    <option value="">Select Section</option>
+                    ${sectionOptions}
+                `;
+            }
+            
+            // Update logs page filter section dropdown
+            const filterSection = document.getElementById('filterSection');
+            if (filterSection) {
+                filterSection.innerHTML = `
+                    <option value="">All Sections</option>
+                    ${sectionOptions}
+                `;
+            }
+        }
+        function generateSectionButtons() {
+            const container = document.getElementById('sectionButtonsContainer');
+            container.innerHTML = '';
+            
+            Object.keys(sections).forEach(section => {
+                const button = document.createElement('button');
+                button.className = 'secondary';
+                button.innerHTML = `<i class="fas fa-users"></i> ${section}`;
+                button.onclick = () => showSectionRecords(section);
+                container.appendChild(button);
+            });
+        }
+
+        function showSectionRecords(section) {
+            const sectionRecords = attendanceRecords.filter(record => record.section === section);
+            displayRecordsByType(sectionRecords);
+        }
+
+        function showAllRecords() {
+            displayRecordsByType(attendanceRecords);
+        }
+
+        function displayRecordsByType(records) {
+            const entryRecords = records.filter(record => record.type === 'entry');
+            const exitRecords = records.filter(record => record.type === 'exit');
+            
+            populateTable('entryTable', entryRecords);
+            populateTable('exitTable', exitRecords);
+        }
+
+        function populateTable(tableId, records) {
+            const table = document.getElementById(tableId);
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Section</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                        <th>Strikes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${records.map(record => `
+                        <tr class="${record.isLate ? 'late-row' : ''} ${record.strikes > 0 ? 'strike-row' : ''}">
+                            <td>${record.username}</td>
+                            <td>${record.section}</td>
+                            <td>${record.date}</td>
+                            <td><span class="status-badge ${record.isLate ? 'status-late' : 'status-ontime'}">${record.isLate ? 'Late' : 'On Time'}</span></td>
+                            <td>${record.strikes > 0 ? `<span class="strikes-badge">${record.strikes}</span>` : '-'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+        }
+        function populateSectionDropdown() {
+            const filterSection = document.getElementById('filterSection');
+            
+            // Clear existing options except the "All Sections" option
+            while (filterSection.options.length > 1) {
+                filterSection.remove(1);
+            }
+            
+            // Get sections from localStorage
+            const sections = JSON.parse(localStorage.getItem('sections')) || {};
+            
+            // Add each section to the dropdown
+            Object.keys(sections).forEach(sectionId => {
+                const section = sections[sectionId];
+                const option = document.createElement('option');
+                option.value = sectionId;
+                option.textContent = section.name;
+                filterSection.appendChild(option);
+            });
+        }
+        function filterAttendanceLogs() {
+            const selectedSection = document.getElementById('filterSection').value;
+            const selectedDate = document.getElementById('filterDate').value;
+            
+            // Get all attendance records
+            const allRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            
+            // Filter records based on section and date
+            let filteredRecords = allRecords;
+            
+            if (selectedSection) {
+                filteredRecords = filteredRecords.filter(record => record.section === selectedSection);
+            }
+            
+            if (selectedDate) {
+                const dateOnly = new Date(selectedDate).toLocaleDateString();
+                filteredRecords = filteredRecords.filter(record => {
+                    const recordDate = new Date(record.timestamp).toLocaleDateString();
+                    return recordDate === dateOnly;
+                });
+            }
+            
+            // Update the attendance table with filtered records
+            updateAttendanceTable(filteredRecords);
+            
+            // Update summary statistics
+            updateSummaryStats(filteredRecords);
+        }
+        function updateAttendanceTable(records) {
+            const tableBody = document.getElementById('attendanceLogTable');
+            tableBody.innerHTML = '';
+            
+            if (records.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="5" style="text-align: center; padding: 1rem;">No records found</td>
+                `;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            // Get sections data for displaying section names
+            const sections = JSON.parse(localStorage.getItem('sections')) || {};
+            
+            // Sort records by timestamp (newest first)
+            records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                
+                // Determine if the student was late
+                const status = record.status || 'unknown';
+                const isLate = record.status === 'late';
+                const hasStrikes = record.strikes >= (sections[record.section]?.strikeLimit || 3);
+                
+                // Apply styling based on status
+                if (isLate) {
+                    row.style.backgroundColor = '#fff3cd'; // Light yellow for late
+                }
+                if (hasStrikes) {
+                    row.style.backgroundColor = '#f8d7da'; // Light red for strike limit reached
+                }
+                
+                row.innerHTML = `
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">${record.username}</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">${sections[record.section]?.name || 'Unknown'}</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">${new Date(record.timestamp).toLocaleString()}</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">${record.status ? record.status.charAt(0).toUpperCase() + record.status.slice(1) : 'Unknown'}</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-color);">${record.strikes || 0}</td>
+            `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        function updateSummaryStats(records) {
+            // Count unique students
+            const uniqueStudents = new Set(records.map(record => record.username)).size;
+            document.getElementById('totalStudents').textContent = uniqueStudents;
+            
+            // Count on-time, late, and strikes
+            const onTime = records.filter(record => record.status === 'on-time').length;
+            const late = records.filter(record => record.status === 'late').length;
+            const totalStrikes = records.reduce((sum, record) => sum + (record.strikes || 0), 0);
+            
+            document.getElementById('onTimeCount').textContent = onTime;
+            document.getElementById('lateCount').textContent = late;
+            document.getElementById('strikesCount').textContent = totalStrikes;
+        }
+        function showDeleteSectionModal() {
+            const modal = document.getElementById('deleteSectionModal');
+            const select = document.getElementById('deleteSectionSelect');
+            
+            // Populate section options
+            select.innerHTML = `
+                <option value="">Choose a section</option>
+                ${Object.keys(sections).map(section => 
+                    `<option value="${section}">${section}</option>`
+                ).join('')}
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteSectionModal').style.display = 'none';
+        }
+
+        function deleteSection() {
+            const sectionToDelete = document.getElementById('deleteSectionSelect').value;
+            
+            if (!sectionToDelete) {
+                showNotification('Please select a section to delete', 'error');
+                return;
+            }
+            
+            // Remove section from sections object
+            delete sections[sectionToDelete];
+            localStorage.setItem('sections', JSON.stringify(sections));
+            
+            // Update users who were in this section
+            Object.keys(users).forEach(username => {
+                if (users[username].section === sectionToDelete) {
+                    users[username].section = '';
+                }
+            });
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            // Remove attendance records for this section
+            attendanceRecords = attendanceRecords.filter(record => record.section !== sectionToDelete);
+            localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+            
+            // Update UI
+            updateAllSectionDropdowns();
+            updateAttendanceLog();
+            closeDeleteModal();
+            showNotification(`Section "${sectionToDelete}" deleted successfully`, 'success');
+        }
+        
+    </script>
+</body>
+</html>
