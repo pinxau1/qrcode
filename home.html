@@ -1238,6 +1238,7 @@
     </footer>
 
     <script>
+        import { Html5QRcodeScanner} from "html5-qrcode";
         let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
         let users = JSON.parse(localStorage.getItem('users')) || {};
             // Initialize strikes for existing users
